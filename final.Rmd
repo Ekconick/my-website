@@ -1,0 +1,39 @@
+---
+title: "hw5"
+output: html_document
+date: "2024-04-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+library(httr)
+library(tidyverse)
+library(plotly)
+library(widgetframe)
+library(tidytext)
+
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(gbm)
+library(xgboost)
+library(caret)
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+data <- read.csv("data.csv", header=TRUE)
+# data <- read.csv("https://raw.githubusercontent.com/Ekconick/my-website/main/data.csv", header=TRUE)
+seattle <- read.csv("train.csv", header=TRUE)
+# seattle <- read.csv("https://raw.githubusercontent.com/Ekconick/my-website/main/train.csv", header=TRUE)
+```
+
