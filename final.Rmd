@@ -25,15 +25,43 @@ library(caret)
 
 ```
 
-```{r}
-
-```
-
 
 ```{r}
 data <- read.csv("data.csv", header=TRUE)
 # data <- read.csv("https://raw.githubusercontent.com/Ekconick/my-website/main/data.csv", header=TRUE)
 seattle <- read.csv("train.csv", header=TRUE)
-# seattle <- read.csv("https://raw.githubusercontent.com/Ekconick/my-website/main/train.csv", header=TRUE)
+#seattle <- read.csv("https://raw.githubusercontent.com/Ekconick/my-website/main/train.csv", header=TRUE)
 ```
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
