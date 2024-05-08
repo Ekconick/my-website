@@ -15,6 +15,8 @@ library(tidyverse)
 library(plotly)
 library(widgetframe)
 library(tidytext)
+library(dplyr)
+library(kableExtra)
 
 library(rpart)
 library(rpart.plot)
@@ -27,35 +29,241 @@ library(caret)
 
 
 ```{r}
-data <- read.csv("data.csv", header=TRUE)
-# data <- read.csv("https://raw.githubusercontent.com/Ekconick/my-website/main/data.csv", header=TRUE)
-seattle <- read.csv("train.csv", header=TRUE)
-#seattle <- read.csv("https://raw.githubusercontent.com/Ekconick/my-website/main/train.csv", header=TRUE)
+# data <- read.csv("data.csv", header=TRUE)
+data <- read.csv("https://raw.githubusercontent.com/Ekconick/my-website/main/data.csv", header=TRUE)
+# seattle <- read.csv("train.csv", header=TRUE)
+seattle <- read.csv("https://raw.githubusercontent.com/Ekconick/my-website/main/train.csv", header=TRUE)
+```
+
+```{r}
+data<- na.omit(data)
+data$waterfront <- factor(data$waterfront, levels = c(0, 1), labels = c("No", "Yes"))
+
+data$view <- factor(data$view, levels = c(0, 1, 2, 3, 4), ordered = TRUE)
+
+data$condition <- factor(data$condition, levels = c(1, 2, 3, 4, 5), ordered = TRUE)
+```
+
+```{r}
+data$age <- 2014 - data$yr_built
+data <- data[, c("price", "bedrooms", "bathrooms", "sqft_living", "sqft_lot", 
+                 "sqft_above", "floors", "waterfront", 
+                 "view", "condition", "age","city")]
+```
+
+```{r}
+seattle <- na.omit(seattle)
+
+data_seattle <- filter(data, city == "Seattle")
+
+data_seattle <- data_seattle[, c("price","bedrooms", "bathrooms", "sqft_above", "sqft_lot")]
+
+seattle_renamed <- seattle %>%
+  rename(bedrooms = beds, 
+         bathrooms = baths, 
+         sqft_above = size, 
+         sqft_lot = lot_size)
+seattle_renamed<- seattle_renamed[, c("price","bedrooms", "bathrooms", "sqft_above", "sqft_lot")]
+
+new_seattle <- bind_rows(data_seattle, seattle_renamed)
+```
+
+```{r}
+ggplot(data, aes(x = price)) +
+  geom_boxplot(fill = "skyblue", color = "black") +
+  labs(title = "Distribution of USA House Prices", x = "Price ($)", y = "Count")
+
+ggplot(data, aes(x = age)) +
+  geom_density(fill = "orange", alpha = 0.5) +
+  labs(title = "Density Plot of USA House Age", x = "Age (Years)", y = "Density")
+
+
+ggplot(data, aes(x = as.factor(condition))) +
+  geom_bar(fill = "green") +
+  labs(title = "Frequency of Houses by Condition", x = "Condition", y = "Count")
+
+```
+
+```{r}
+ggplot(new_seattle, aes(x = price)) +
+  geom_boxplot(fill = "pink", color = "black") +
+  labs(title = "Distribution of Seattle House Prices", x = "Price ($)", y = "Count")
+
+ggplot(new_seattle, aes(x = sqft_above)) +
+  geom_density(fill = "yellow", alpha = 0.5) +
+  labs(title = "Density Plot of Seattle House Size", x = "Size(sqft)", y = "Density")
+
+
+```
+
+```{r}
+# Add a new column to each dataset to indicate the source
+data$dataset <- 'data'
+new_seattle$dataset <- 'new_seattle'
+
+# Combine the datasets
+combined_data <- bind_rows(data, new_seattle)
+# Density Plot for Price Distribution Comparison
+ggplot(combined_data, aes(x = price, fill = dataset, color = dataset, alpha = 0.5)) +
+  geom_density(adjust = 1.5) +  # Adjust can be changed based on how smooth you want the curve to be
+  scale_fill_manual(values = c("blue", "red")) +
+  scale_color_manual(values = c("blue", "red")) +
+  labs(title = "Comparison of Price Distribution",
+       subtitle = "Density plot of price for USA and Seattle",
+       x = "Price ($)",
+       y = "Density") +
+  theme_minimal() +
+  guides(fill = guide_legend(title = "Dataset"), color = guide_legend(title = "Dataset"))
+
+```
+
+```{r}
+model1 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + sqft_above + 
+            floors + waterfront + view + condition + age, data = data)
+summary1<-summary(model1)
+coefficients_table1 <- summary1$coefficients
+kable(coefficients_table1, caption = "Linear Regression Analysis Summary of Dataset1")
+```
+
+
+
+```{r}
+model1.1 <-lm(price ~ bedrooms + bathrooms + sqft_above + sqft_lot, data = data)
+summary1.1<-summary(model1.1)
+coefficients_table1.1 <- summary1.1$coefficients
+kable(coefficients_table1.1, caption = "Linear Regression Analysis Summary of Dataset1")
+
+
+model2<- lm(price ~ beds + baths + size + lot_size, data = seattle)
+summary2<-summary(model2)
+coefficients_table2 <- summary2$coefficients
+kable(coefficients_table2, caption = "Linear Regression Analysis Summary of Dataset2")
+
+model3 <-lm(price ~ bedrooms + bathrooms + sqft_above + sqft_lot, data = new_seattle)
+summary3<-summary(model3)
+coefficients_table3 <- summary3$coefficients
+kable(coefficients_table3, caption = "Linear Regression Analysis Summary of Dataset3")
 ```
 
 
 ```{r}
+install.packages("glmnet")
+library(glmnet)
 
+# Prepare the matrix of predictors and the response variable
+x <- model.matrix(price ~ bedrooms + bathrooms + sqft_above + sqft_lot, data = data)[,-1]  # Exclude intercept
+y <- data$price
+
+# Fit Ridge Regression Model
+ridge_model <- glmnet(x, y, alpha = 0)
+# Fit Lasso Regression Model
+lasso_model <- glmnet(x, y, alpha = 1)
+
+# Optionally, you can use cross-validation to find the optimal lambda
+cv_ridge <- cv.glmnet(x, y, alpha = 0)
+cv_lasso <- cv.glmnet(x, y, alpha = 1)
+
+
+plot(cv_ridge)
+plot(cv_lasso)
 ```
 
 
 
+```{r}
+install.packages("mgcv")
+library(mgcv)
+gam_model1 <- gam(price ~ s(bedrooms) + s(bathrooms)  +
+                 s(sqft_above) + s(sqft_lot), data = data)
+
+summary(gam_model1)
+
+plot(gam_model1)
+```
+
+```{r}
+gam_model2 <- gam(price ~ s(beds) + s(baths)  +
+                 s(size) + s(lot_size), data = seattle)
+
+summary(gam_model2)
+
+plot(gam_model2)
+```
+
+```{r}
+gam_model3 <- gam(price ~ s(bedrooms) + s(bathrooms)  +
+                 s(sqft_above) + s(sqft_lot), data = new_seattle)
+
+summary(gam_model3)
+
+plot(gam_model3)
+```
+
+```{r}
+tree1 <- rpart(price~., method = 'anova', data = data)
+rpart.plot(tree1)
+```
+
+```{r}
+tree1.1 <- rpart(price ~ bedrooms + bathrooms + sqft_above + sqft_lot, method = 'anova', data = data)
+rpart.plot(tree1.1)
+```
 
 
 
+```{r}
+bag1<-randomForest(
+  mtry = 4,
+  price~bedrooms + bathrooms + sqft_above + sqft_lot,
+  data = data,
+  na.action = na.omit
+)
+# oob error rate
+sum(bag1$err.rate[, 1])
 
+varImpPlot(
+  bag1, cex.lab = 1.5, cex.axis = 2,
+  cex = 1.3, n.var = 4, main = "", pch =16, col = "blue"
+)
+importance(bag1)
+```
 
+```{r}
+boost1 = gbm(
+  price~bedrooms + bathrooms + sqft_above + sqft_lot,
+  data = data,
+  distribution = "gaussian",
+  n.trees = 10,
+  shrinkage = 0.01,
+  interaction.depth = 4, 
+  cv.folds = 2
+)
 
+plot(boost1$train.error, ylab = "error", type = "l", lwd=3, ylim = c(min(boost1$train.error) * 0.9, max(boost1$cv.error) * 1.1))
+lines(boost1$cv.error, col="green", lwd=3)
+```
 
+```{r}
+tree3 <- rpart(price ~ bedrooms + bathrooms + sqft_above + sqft_lot, method = 'anova', data = new_seattle)
+rpart.plot(tree3)
+```
 
+```{r}
+bag3<-randomForest(
+  mtry = 4,
+  price~bedrooms + bathrooms + sqft_above + sqft_lot,
+  data = new_seattle,
+  na.action = na.omit
+)
+# oob error rate
+sum(bag1$err.rate[, 1])
 
-
-
-
-
-
-
-
+varImpPlot(
+  bag3, cex.lab = 1.5, cex.axis = 2,
+  cex = 1.3, n.var = 4, main = "", pch =16, col = "blue"
+)
+importance(bag3)
+```
 
 
 
