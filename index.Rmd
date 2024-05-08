@@ -1,5 +1,5 @@
 ---
-title: "JSC370 Final Project-Yuxuan Wang"
+title: "Factors that affects House price in USA"
 author: "Yuxuan Wang"
 output: 
     html_document:
@@ -39,9 +39,9 @@ library(caret)
 This figure shows the age and condition distribution in different city. It can reflects the housing condition for each city, and we can see the city's culture and economy behind the house age and condition.
 ```{r echo=FALSE, message=FALSE,warning=FALSE}
 # data <- read.csv("data.csv", header=TRUE)
-data <- read.csv("https://raw.githubusercontent.com/Ekconick/my-website/main/data.csv", header=TRUE)
+data <- read.csv("https://raw.githubusercontent.com/Ekconick/my-website/main/data/data.csv", header=TRUE)
 # seattle <- read.csv("train.csv", header=TRUE)
-seattle <- read.csv("https://raw.githubusercontent.com/Ekconick/my-website/main/train.csv", header=TRUE)
+seattle <- read.csv("https://raw.githubusercontent.com/Ekconick/my-website/main/data/train.csv", header=TRUE)
 
 data<- na.omit(data)
 data$waterfront <- factor(data$waterfront, levels = c(0, 1), labels = c("No", "Yes"))
