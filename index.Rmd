@@ -1,5 +1,5 @@
 ---
-title: "JSC370 Final Project"
+title: "JSC370 Final Project-Yuxuan Wang"
 author: "Yuxuan Wang"
 output: 
     html_document:
